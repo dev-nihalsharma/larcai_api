@@ -7,4 +7,5 @@ urlpatterns = [
     path('accounts/', include('accounts.urls')),
     path('agents/', include('agents.urls')),
     path('subscriptions/', include('subscriptions.urls')),
+    
 ]

@@ -7,3 +7,4 @@ router = SimpleRouter()
 router.register("chat", ChatBotViewSet, basename='chat')
 
 urlpatterns = router.urls
+
