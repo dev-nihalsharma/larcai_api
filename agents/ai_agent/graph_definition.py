@@ -1,7 +1,7 @@
 from typing import TypedDict, Any, Literal
 from langgraph.graph import StateGraph, START, END
 
-# ----- TypedDicts -----
+
 class InputData(TypedDict):
     prompt: str
     model: str | None
