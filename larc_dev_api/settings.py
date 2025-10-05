@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'accounts',
     'agents',
     'subscriptions',
+    'api',
     'rest_framework',
     'oauth2_provider',
 
