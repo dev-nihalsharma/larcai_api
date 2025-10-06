@@ -40,9 +40,12 @@ INSTALLED_APPS = [
     'accounts',
     'agents',
     'subscriptions',
-    'api',
+    'api_keys',
+    'rest_framework_simple_api_key',
     'rest_framework',
     'oauth2_provider',
+    'drf_spectacular',
+    'rest_framework_api_key',
 
 ]
 
@@ -143,4 +146,14 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES":(
         "rest_framework.permissions.IsAuthenticated",
     ),
+    "DEFAULT_SCHEMA_CLASS":"drf_spectacular.openapi.AutoSchema",
+
+}
+SPECTACULAR_SETTINGS={
+    "TITLE":"LARC DEV API",
+    "DESCRIPTION":"API DOCS",
+}
+import os
+SIMPLE_API_KEY={
+    "FERNET_SECRET":"Kl4HaRXhwxP20AeFuVAD0d3ss6vQQ0O6zKmxHTwowYo="
 }
