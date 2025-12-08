@@ -1,6 +1,7 @@
 from rest_framework import viewsets
 from rest_framework.decorators import action
 
+from agents.ai_agent.ai_agent import langgraph_pipeline
 from larc_dev_api.utils import resp_success
 from rest_framework.views import APIView
 from rest_framework.response import Response

@@ -42,11 +42,10 @@ INSTALLED_APPS = [
     'agents',
     'subscriptions',
     'api_keys',
-    'rest_framework_simple_api_key',
     'rest_framework',
+    'rest_framework_api_key',
     'oauth2_provider',
     'drf_spectacular',
-    'rest_framework_api_key',
 
 ]
 
