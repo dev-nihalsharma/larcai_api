@@ -1,0 +1,30 @@
+[
+  {
+    "id": "gpt-3.5-turbo",
+    "provider": "OpenAI",
+    "tier": "fast",
+    "context_limit": 16000,
+    "cost": 0.5
+  },
+  {
+    "id": "gpt-4-turbo",
+    "provider": "OpenAI",
+    "tier": "powerful",
+    "context_limit": 128000,
+    "cost": 10.0
+  },
+  {
+    "id": "claude-3-opus",
+    "provider": "Anthropic",
+    "tier": "powerful",
+    "context_limit": 200000,
+    "cost": 15.0
+  },
+  {
+    "id": "llama-3-8b",
+    "provider": "Meta",
+    "tier": "fast",
+    "context_limit": 8000,
+    "cost": 0.0
+  }
+]

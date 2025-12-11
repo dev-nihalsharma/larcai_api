@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -41,11 +42,10 @@ INSTALLED_APPS = [
     'agents',
     'subscriptions',
     'api_keys',
-    'rest_framework_simple_api_key',
     'rest_framework',
+    'rest_framework_api_key',
     'oauth2_provider',
     'drf_spectacular',
-    'rest_framework_api_key',
 
 ]
 
@@ -57,6 +57,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'oauth2_provider.middleware.OAuth2TokenMiddleware',
     'oauth2_provider.middleware.OAuth2TokenMiddleware',
 ]
 
@@ -137,23 +138,22 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.User'
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES":(
+    "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
         "oauth2_provider.contrib.rest_framework.OAuth2Authentication",
         "rest_framework.authentication.SessionAuthentication",
-        
+
     ),
-    "DEFAULT_PERMISSION_CLASSES":(
+    "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
     ),
-    "DEFAULT_SCHEMA_CLASS":"drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 
 }
-SPECTACULAR_SETTINGS={
-    "TITLE":"LARC DEV API",
-    "DESCRIPTION":"API DOCS",
+SPECTACULAR_SETTINGS = {
+    "TITLE": "LARC DEV API",
+    "DESCRIPTION": "API DOCS",
 }
-import os
-SIMPLE_API_KEY={
-    "FERNET_SECRET":"Kl4HaRXhwxP20AeFuVAD0d3ss6vQQ0O6zKmxHTwowYo="
+SIMPLE_API_KEY = {
+    "FERNET_SECRET": "Kl4HaRXhwxP20AeFuVAD0d3ss6vQQ0O6zKmxHTwowYo="
 }
