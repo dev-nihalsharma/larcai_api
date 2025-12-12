@@ -6,20 +6,26 @@ import os
 from langgraph.checkpoint.memory import InMemorySaver 
 from pymongo import MongoClient
 from langgraph.checkpoint.mongodb import MongoDBSaver
+from .prompts import SYSTEM_PROMPT_TEMPLATE
+from ..model_connectors.call_model import call_claude, call_gpt_3_5_turbo, call_gpt_4
+
 
 # Database connection setup
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/larcai")
+MONGO_URI = os.getenv("MONGO_URI", "String")
 
 #loding the configs of models from json 
 def load_models_config() -> Dict[str, dict]:
-    file_path = "models.json"
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    file_path = os.path.join(base_dir, "models.json")
+    if not os.path.exists(file_path):
+        file_path = "models.json"
+        
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"{file_path} is missing. Please create it.")
     
     with open(file_path, "r") as f:
         models_list = json.load(f)
     
-    # not required but for fast O(1) lookups
     return {m["id"]: m for m in models_list}
 
 
@@ -87,13 +93,39 @@ def auto_model_selection(state: AgentState) -> AgentState:
 
 
 def call_model(state: AgentState) -> AgentState:
-    """execution"""
     model_id = state["model"]
-    print(f"Executing with {model_id} ")
-    response_text = f"[{model_id}]: I have processed your request '{state['prompt']}'."
-    
-    state["response"] = response_text
-    state["messages"].append({"role": "assistant", "content": response_text})
+    print(f"Executing with {model_id}")
+    system_prompt = SYSTEM_PROMPT_TEMPLATE.format(
+        model_name=model_id,
+        preference=state["metadata"].get("selection_reason", "auto")
+    )
+
+    # Combine system + user prompt
+    history_messages = state["messages"][:-1] 
+    history_text = ""
+    for msg in history_messages:
+        role = "User" if msg["role"] == "user" else "AI"
+        history_text += f"{role}: {msg['content']}\n"
+
+    # 3. Combine: System + History + Current Request
+    final_prompt = (
+        f"{system_prompt}\n\n"
+        f"### CONVERSATION HISTORY:\n{history_text}\n\n"
+        f"### CURRENT USER REQUEST:\n{state['prompt']}"
+    )
+
+    if model_id == "claude-3-opus":
+        result = call_claude(final_prompt, model_id)
+    elif model_id == "gpt-3.5-turbo":
+        result = call_gpt_3_5_turbo(final_prompt, model_id)
+    elif model_id == "gpt-4-turbo":
+        result = call_gpt_4(final_prompt, model_id)
+    else:
+        result = {"response": "Unknown model"}
+
+    state["response"] = result["response"]
+    state["messages"].append({"role": "assistant", "content": result["response"]})
+
     return state
 
 
@@ -128,16 +160,12 @@ graph.add_edge("call_model", END)
 
 # InMemorySaver for local development
 # memory = InMemorySaver()
-# workflow = graph.compile(checkpointer=memory)
-
+client = MongoClient(os.getenv("MONGO_URI", "String"))
+checkpointer = MongoDBSaver(client)
+workflow = graph.compile(checkpointer=checkpointer)
 def get_app():
     """
-    Creates the app with MongoDB checkpointer.
+    Creates the app with MongoDB checkpointer.  
     """
-    client = MongoClient(MONGO_URI)
-    db = client["agent_db"]
-    checkpointer = MongoDBSaver(client)
-
-    return graph.compile(checkpointer=checkpointer)
-
-app = get_app()
+    return workflow
+app = workflow
