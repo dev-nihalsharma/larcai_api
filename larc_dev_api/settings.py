@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -26,7 +27,7 @@ SECRET_KEY = 'django-insecure-rs2%)=fgcte3+eqk@+7=)=o!&57o3w*n#uw8oo$&396#$#cn*z
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
+SITE_ID=1
 
 # Application definition
 
@@ -40,11 +41,17 @@ INSTALLED_APPS = [
     'accounts',
     'agents',
     'subscriptions',
-    'rest_framework',
     'api_keys',
+    'rest_framework',
     'rest_framework_api_key',
     'oauth2_provider',
     'drf_spectacular',
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
+
 ]
 
 MIDDLEWARE = [
@@ -56,9 +63,15 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'oauth2_provider.middleware.OAuth2TokenMiddleware',
+    'oauth2_provider.middleware.OAuth2TokenMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'larc_dev_api.urls'
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend', # standard django backend
+    'allauth.account.auth_backends.AuthenticationBackend', # all auth backend
+]
 
 TEMPLATES = [
     {
@@ -74,6 +87,9 @@ TEMPLATES = [
         },
     },
 ]
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+SOCIALACCOUNT_LOGIN_ON_GET = True
 
 WSGI_APPLICATION = 'larc_dev_api.wsgi.application'
 
@@ -135,22 +151,22 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'accounts.User'
 
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES":(
-        
+    "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
         "oauth2_provider.contrib.rest_framework.OAuth2Authentication",
         "rest_framework.authentication.SessionAuthentication",
-        
+
     ),
-    "DEFAULT_PERMISSION_CLASSES":(
-        "rest_framework_api_key.permissions.HasAPIKey",
+    "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
     ),
-    "DEFAULT_SCHEMA_CLASS":"drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 
 }
-SPECTACULAR_SETTINGS={
-    "TITLE":"LARC DEV API",
-    "DESCRIPTION":"API DOCS",
-    "SECURITY": [{"ApiKeyAuth": []}],
+SPECTACULAR_SETTINGS = {
+    "TITLE": "LARC DEV API",
+    "DESCRIPTION": "API DOCS",
+}
+SIMPLE_API_KEY = {
+    "FERNET_SECRET": "Kl4HaRXhwxP20AeFuVAD0d3ss6vQQ0O6zKmxHTwowYo="
 }
