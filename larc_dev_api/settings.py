@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-rs2%)=fgcte3+eqk@+7=)=o!&57o3w*n#uw8oo$&396#$#cn*z
 DEBUG = True
 
 ALLOWED_HOSTS = []
-
+SITE_ID=1
 
 # Application definition
 
@@ -46,6 +46,11 @@ INSTALLED_APPS = [
     'rest_framework_api_key',
     'oauth2_provider',
     'drf_spectacular',
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
 
 ]
 
@@ -59,9 +64,14 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'oauth2_provider.middleware.OAuth2TokenMiddleware',
     'oauth2_provider.middleware.OAuth2TokenMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'larc_dev_api.urls'
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend', # standard django backend
+    'allauth.account.auth_backends.AuthenticationBackend', # all auth backend
+]
 
 TEMPLATES = [
     {
@@ -77,6 +87,9 @@ TEMPLATES = [
         },
     },
 ]
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+SOCIALACCOUNT_LOGIN_ON_GET = True
 
 WSGI_APPLICATION = 'larc_dev_api.wsgi.application'
 

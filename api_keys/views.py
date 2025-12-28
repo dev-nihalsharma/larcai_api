@@ -24,7 +24,7 @@ class UserAPIKeyListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         # We override to use the package helper create_api_key which returns (obj, key)
         name = self.request.data.get("name", "")
-        obj, raw_key = UserAPIKey.objects.create_api_key(name=name, owner=self.request.user)
+        obj, raw_key = UserAPIKey.objects.create_key(name=name, owner=self.request.user)
         # attach created object and raw key so create() can return it
         self._created_obj = obj
         self._raw_key = raw_key

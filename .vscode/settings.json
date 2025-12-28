@@ -2,5 +2,8 @@
     "python.defaultInterpreterPath": "/Users/mohitvohra/Desktop/larcai new/larcai_devapi_dev/.venv/bin/python",
     "python.analysis.extraPaths": [
         "./"
+    ],
+    "cursorpyright.analysis.extraPaths": [
+        "./"
     ]
 }

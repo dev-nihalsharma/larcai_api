@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+@theme {
+  --color-google-gray: #c4c7c5;
+  --color-google-bg: #131314;
+  --color-google-hover: #282a2c;
+  --color-google-active: #333537;
+}
+
+:root {
+  background-color: #000000;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  margin: 0;
+  font-family: 'Google Sans', 'Inter', system-ui, sans-serif;
+}
