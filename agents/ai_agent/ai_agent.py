@@ -17,7 +17,8 @@ def langgraph_pipeline(data: AgentState, thread_id: str = None) -> dict:
         "configurable": {
             "thread_id": thread_id,
             "checkpoint_ns": checkpoint_ns,
-        }
+        },
+        "recursion_limit": 20
     }
 
     final_state = app.invoke(data, config=config)

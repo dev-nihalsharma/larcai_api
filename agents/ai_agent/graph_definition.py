@@ -2,170 +2,294 @@ from typing import TypedDict, Any, Literal, List, Dict
 from langgraph.graph import StateGraph, START, END
 import json
 import os
-# BOTH OPTIONS
-from langgraph.checkpoint.memory import InMemorySaver 
+import re
+
 from pymongo import MongoClient
 from langgraph.checkpoint.mongodb import MongoDBSaver
-from .prompts import SYSTEM_PROMPT_TEMPLATE
-from ..model_connectors.call_model import call_claude, call_gpt_3_5_turbo, call_gpt_4
+from simpleeval import simple_eval
 
+from .prompts import REACT_AGENT_PROMPT
+from ..model_connectors.call_model import (
+    call_claude,
+    call_gpt_3_5_turbo,
+    call_gpt_4,
+)
 
-# Database connection setup
-MONGO_URI = os.getenv("MONGO_URI", "String")
+# ============================================================
+# Model Configuration & Tooling
+# ============================================================
 
-#loding the configs of models from json 
 def load_models_config() -> Dict[str, dict]:
+    """Load supported LLM metadata from models.json."""
     base_dir = os.path.dirname(os.path.abspath(__file__))
     file_path = os.path.join(base_dir, "models.json")
+
     if not os.path.exists(file_path):
-        file_path = "models.json"
-        
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"{file_path} is missing. Please create it.")
-    
+        raise FileNotFoundError("models.json is missing")
+
     with open(file_path, "r") as f:
         models_list = json.load(f)
-    
+
     return {m["id"]: m for m in models_list}
 
 
+def execute_tool(tool_name: str, tool_input: str) -> str:
+    """
+    Execute a supported tool and return its observation.
+    This function represents the 'Act' capability of the agent.
+    """
+    if tool_name == "get_weather":
+        return f"The weather in {tool_input} is Sunny, 25°C."
+
+    if tool_name == "calculator":
+        try:
+            return str(simple_eval(tool_input))
+        except Exception:
+            return "Error evaluating expression."
+
+    return f"Unknown tool: {tool_name}"
+
+# ============================================================
+# Agent State Definition
+# ============================================================
+
 class AgentState(TypedDict):
+    """
+    Persistent state for the ReAct agent.
+    - messages: long-term conversational memory
+    - scratchpad: short-term reasoning trace for current turn
+    """
     messages: List[Dict[str, str]]
     prompt: str
     model: str | None
     response: Any | None
     metadata: Dict[str, Any]
 
-# NODES
+    scratchpad: List[str]
+    current_action: str | None
+    current_action_input: str | None
+
+# ============================================================
+# Graph Nodes
+# ============================================================
+
 def setup_node(state: AgentState) -> AgentState:
-    """Initializes the state and adds the user prompt to history."""
-    if "messages" not in state:
-        state["messages"] = []
-    if "metadata" not in state:
-        state["metadata"] = {}
-        
-    # Add user prompt to conversation history
+    """
+    Initialize required state fields and append the user prompt
+    to message history if it is new.
+    """
+    state.setdefault("messages", [])
+    state.setdefault("metadata", {})
+    state.setdefault("scratchpad", [])
+
     if state.get("prompt"):
-        state["messages"].append({"role": "user", "content": state["prompt"]})
-        
+        last = state["messages"][-1] if state["messages"] else None
+        if not last or last["content"] != state["prompt"]:
+            state["messages"].append(
+                {"role": "user", "content": state["prompt"]}
+            )
+
     return state
 
 
 def auto_model_selection(state: AgentState) -> AgentState:
     """
-    Smarter auto model Selection Logic based on:
-    1. Token Estimation
-    2. Task Complexity (Keywords)
+    Select an appropriate model based on prompt complexity
+    and estimated context size.
     """
-    print("AI Router: Analyzing Request")
     config = load_models_config()
-    prompt_text = state["prompt"] or ""
-    
-    # Estimate tokens (1 token ~= 4 chars)
-    est_tokens = len(prompt_text) / 4
-    
-    #  Check for 'hard' keywords
-    complex_keywords = ["code", "python", "debug", "math", "analysis", "json", "function"]
-    is_complex = any(k in prompt_text.lower() for k in complex_keywords)
-    
-    selected_model = "gpt-3.5-turbo"
-    reason = "default_fallback"
+    text = state["prompt"] or ""
+
+    est_tokens = len(text) / 4
+    is_complex = any(
+        k in text.lower()
+        for k in ["code", "python", "debug", "math", "analysis", "json", "function"]
+    )
 
     if is_complex:
-        selected_model = "gpt-4-turbo"
-        reason = "complexity_detected_keywords"
+        state["model"] = "gpt-4-turbo"
+        state["metadata"]["selection_reason"] = "complexity"
     elif est_tokens > 10000:
-        selected_model = "claude-3-opus"
-        reason = "high_context_needed"
+        state["model"] = "claude-3-opus"
+        state["metadata"]["selection_reason"] = "large_context"
     else:
-        selected_model = "gpt-3.5-turbo"
-        reason = "simple_query_optimization"
+        state["model"] = "gpt-3.5-turbo"
+        state["metadata"]["selection_reason"] = "simple_query"
 
-    # Validation: Ensure the selected model actually exists in JSON
-    if selected_model not in config:
-        selected_model = list(config.keys())[0] 
+    if state["model"] not in config:
+        state["model"] = list(config.keys())[0]
 
-    print(f"Selected: {selected_model} (Reason: {reason})")
-    
-    state["model"] = selected_model
-    state["metadata"]["selection_reason"] = reason
     return state
 
 
-def call_model(state: AgentState) -> AgentState:
+def reason_node(state: AgentState) -> AgentState:
+    """
+    Core reasoning step.
+    The model decides whether to act (use a tool)
+    or produce a final answer.
+    """
     model_id = state["model"]
-    print(f"Executing with {model_id}")
-    system_prompt = SYSTEM_PROMPT_TEMPLATE.format(
+
+    tools_description = """
+    - get_weather: Fetch weather for a city
+    - calculator: Evaluate a math expression
+    """
+
+    system_prompt = REACT_AGENT_PROMPT.format(
+        tool_descriptions=tools_description,
         model_name=model_id,
-        preference=state["metadata"].get("selection_reason", "auto")
+        preference=state["metadata"].get("selection_reason", "auto"),
     )
 
-    # Combine system + user prompt
-    history_messages = state["messages"][:-1] 
-    history_text = ""
-    for msg in history_messages:
+    history = ""
+    for msg in state["messages"][:-1]:
         role = "User" if msg["role"] == "user" else "AI"
-        history_text += f"{role}: {msg['content']}\n"
+        history += f"{role}: {msg['content']}\n"
 
-    # 3. Combine: System + History + Current Request
-    final_prompt = (
-        f"{system_prompt}\n\n"
-        f"### CONVERSATION HISTORY:\n{history_text}\n\n"
-        f"### CURRENT USER REQUEST:\n{state['prompt']}"
-    )
+    scratchpad = "\n".join(state["scratchpad"])
+
+    final_prompt = f"""
+{system_prompt}
+
+### CONVERSATION HISTORY
+{history}
+
+### USER QUERY
+{state['prompt']}
+
+### SCRATCHPAD
+{scratchpad}
+
+Respond using:
+- Action / Action Input
+OR
+- Final Answer
+"""
 
     if model_id == "claude-3-opus":
         result = call_claude(final_prompt, model_id)
-    elif model_id == "gpt-3.5-turbo":
-        result = call_gpt_3_5_turbo(final_prompt, model_id)
     elif model_id == "gpt-4-turbo":
         result = call_gpt_4(final_prompt, model_id)
     else:
-        result = {"response": "Unknown model"}
+        result = call_gpt_3_5_turbo(final_prompt, model_id)
 
     state["response"] = result["response"]
-    state["messages"].append({"role": "assistant", "content": result["response"]})
+    state["scratchpad"].append(state["response"])
 
     return state
 
 
-def check_condition(state: AgentState) -> Literal["call_model", "auto_model_selection"]:
+def act_node(state: AgentState) -> AgentState:
     """
-    user's model choice or route it automatically.
+    Parse the model output to determine which tool to call.
     """
-    allowed_models = load_models_config()
-    user_choice = state.get("model")
-    
-    # If user provided a model AND it exists in our JSON config
-    if user_choice and user_choice in allowed_models:
-        print(f"User forced model: {user_choice} ")
-        return "call_model"
-    
-    # Otherwise
-    return "auto_model_selection"
+    text = state["response"]
+
+    action = re.search(r"Action:\s*(.*)", text)
+    action_input = re.search(r"Action Input:\s*(.*)", text)
+
+    state["current_action"] = action.group(1).strip() if action else None
+    state["current_action_input"] = (
+        action_input.group(1).strip() if action_input else None
+    )
+
+    return state
 
 
-# ----- Graph -----
+def observe_node(state: AgentState) -> AgentState:
+    """
+    Execute the chosen tool and store its observation
+    in the scratchpad for the next reasoning step.
+    """
+    if state.get("current_action"):
+        result = execute_tool(
+            state["current_action"],
+            state["current_action_input"],
+        )
+        state["scratchpad"].append(f"Observation: {result}")
+    else:
+        state["scratchpad"].append("Observation: No valid action detected")
+
+    return state
+
+
+def finalize_node(state: AgentState) -> AgentState:
+    """
+    Extract the final answer and persist it
+    as part of the conversation history.
+    """
+    text = state["response"]
+
+    final_answer = (
+        text.split("Final Answer:")[-1].strip()
+        if "Final Answer:" in text
+        else text
+    )
+
+    state["messages"].append(
+        {"role": "assistant", "content": final_answer}
+    )
+
+    return state
+
+# ============================================================
+# Graph Control Logic
+# ============================================================
+
+def check_condition(state: AgentState) -> Literal["reason", "auto_model_selection"]:
+    """Route based on whether the user explicitly selected a model."""
+    allowed = load_models_config()
+    return "reason" if state.get("model") in allowed else "auto_model_selection"
+
+
+def should_continue(state: AgentState) -> Literal["act", "finalize"]:
+    """
+    Decide whether the agent should act (tool call)
+    or finish the reasoning loop.
+    """
+    text = state["response"]
+
+    if "Final Answer:" in text:
+        return "finalize"
+    if "Action:" in text:
+        return "act"
+    return "finalize"
+
+# ============================================================
+# Graph Construction
+# ============================================================
+
 graph = StateGraph(AgentState)
 
 graph.add_node("setup", setup_node)
 graph.add_node("auto_model_selection", auto_model_selection)
-graph.add_node("call_model", call_model)
+graph.add_node("reason", reason_node)
+graph.add_node("act", act_node)
+graph.add_node("observe", observe_node)
+graph.add_node("finalize", finalize_node)
 
 graph.add_edge(START, "setup")
-graph.add_conditional_edges("setup", check_condition)
-graph.add_edge("auto_model_selection", "call_model")
-graph.add_edge("call_model", END)
 
+graph.add_conditional_edges("setup", check_condition, {
+    "auto_model_selection": "auto_model_selection",
+    "reason": "reason",
+})
+graph.add_edge("auto_model_selection", "reason")
 
-# InMemorySaver for local development
-# memory = InMemorySaver()
-client = MongoClient(os.getenv("MONGO_URI", "String"))
+graph.add_conditional_edges("reason", should_continue, {
+    "act": "act",
+    "finalize": "finalize",
+})
+
+graph.add_edge("act", "observe")
+graph.add_edge("observe", "reason")
+graph.add_edge("finalize", END)
+
+# ============================================================
+# Checkpointer & App
+# ============================================================
+
+client = MongoClient(os.getenv("MONGO_URI"))
 checkpointer = MongoDBSaver(client)
-workflow = graph.compile(checkpointer=checkpointer)
-def get_app():
-    """
-    Creates the app with MongoDB checkpointer.  
-    """
-    return workflow
-app = workflow
+
+app = graph.compile(checkpointer=checkpointer)
