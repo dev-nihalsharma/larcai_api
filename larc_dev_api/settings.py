@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
+    'corsheaders'
 
 ]
 
@@ -65,12 +66,17 @@ MIDDLEWARE = [
     'oauth2_provider.middleware.OAuth2TokenMiddleware',
     'oauth2_provider.middleware.OAuth2TokenMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'larc_dev_api.urls'
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend', # standard django backend
     'allauth.account.auth_backends.AuthenticationBackend', # all auth backend
+]
+
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:5173', 
 ]
 
 TEMPLATES = [

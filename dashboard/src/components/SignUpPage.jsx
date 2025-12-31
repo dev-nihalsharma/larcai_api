@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react'; // Import icons for show/hide
-
+import { signup } from '../api/auth';
 const SignUpPage = () => {
   // 1. States for form data and visibility
   const [formData, setFormData] = useState({
@@ -21,14 +21,23 @@ const SignUpPage = () => {
   };
 
   // 2. Validation Logic
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match!");
       return;
     }
-    // Proceed with registration...
-    console.log("Form submitted:", formData);
+    try{
+      const res = await signup({
+        fullName: formData.fullName,
+        email:formData.email,
+        password:formData.password
+      })
+      console.log("signup success",res);
+      window.location.href="/signin";
+    }catch(e){
+      setError(e.error||"failed");
+    }
   };
 
   return (
