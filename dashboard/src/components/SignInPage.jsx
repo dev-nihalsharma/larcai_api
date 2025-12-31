@@ -1,13 +1,23 @@
 import React, { useState } from 'react'; // 1. Added useState
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { isAuthenticated } from "../utils/auth";
 import { Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react'; // 2. Added Icons
 import { login } from '../api/auth';
 const SignInPage = () => {
+  const navigate = useNavigate();
   // 3. State to track if password is shown or hidden
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+  if (isAuthenticated()) {
+    navigate("/");
+  }
+}, [navigate]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-[#0e0e0e] text-white px-4 font-sans">
@@ -16,35 +26,17 @@ const SignInPage = () => {
           <h1 className="text-2xl font-semibold mb-2">Sign in to Larc AI</h1>
           <p className="text-[#9aa0a6] text-sm">Use your Google Account to continue</p>
         </div>
-
-        {/* Google Sign-In Button */}
-        <button className="w-full flex items-center justify-center gap-3 py-3 px-4 bg-white hover:bg-gray-100 text-black font-medium rounded-full transition-all mb-6">
-          <img
-            src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png"
-            alt="Google"
-            className="w-5 h-5"
-          />
-          Continue with Google
-        </button>
-
-        <div className="relative mb-6 flex items-center py-1">
-          <div className="flex-grow border-t border-[#3c4043]"></div>
-          <span className="mx-4 text-xs text-[#5f6368] uppercase font-bold tracking-wider">or</span>
-          <div className="flex-grow border-t border-[#3c4043]"></div>
-        </div>
-
-        <form className="space-y-4" 
-          onSubmit={async (e)=>{
+        <form className="space-y-4"
+          onSubmit={async (e) => {
             e.preventDefault()
             try {
-              const res = await login({email,password})
-              console.log("login success",res);
-              if(res.token){
-                localStorage.setItem("token",res.token);
-              }
+              const res = await login({ email, password })
+              console.log("login success", res);
+              localStorage.setItem("access", res.access);
+              localStorage.setItem("refresh", res.refresh);
               window.location.href="/";
             } catch (error) {
-              setError(error.error||"Invalid cred..")
+              setError(error.error || "Invalid cred..")
             }
           }}
         >
