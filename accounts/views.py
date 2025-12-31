@@ -37,13 +37,16 @@ class RegisterAPIView(APIView):
             )
 
         data = serializer.validated_data
+        name_parts = data["fullName"].strip().split()
+        first_name = name_parts[0]
+        last_name = " ".join(name_parts[1:]) if len(name_parts) > 1 else ""
 
         user = User.objects.create_user(
             email=data["email"],
             password=data["password"],
-            username=(data.get("username") or None),
-            first_name=data.get("first_name", ""),
-            last_name=data.get("last_name", ""),
+            username=(data["email"].split("@")[0] or None),
+            first_name=first_name,
+            last_name=last_name,
         )
 
         return Response(
