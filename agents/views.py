@@ -11,12 +11,12 @@ from rest_framework_api_key.permissions import HasAPIKey
 
 
 # Create your views here.
-class ChatBotViewSet(viewsets.ModelViewSet):
+class ChatBotViewSet(viewsets.ViewSet):
 
     permission_classes = [AllowAny]
 
-    @action(detail=False, methods=['post'])
-    def chat(self, request):
+    # @action(detail=False, methods=['post'])
+    def create(self, request):
 
         # apikey objects required as of now hardcoded for testing
         # Step 1: Verify API Key

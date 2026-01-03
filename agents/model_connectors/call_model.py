@@ -1,70 +1,83 @@
 import os
+import json
 from langchain_openai import AzureChatOpenAI
+from langchain_aws import ChatBedrock
+from langchain_google_genai import ChatGoogleGenerativeAI
 from dotenv import load_dotenv
 
 load_dotenv()
 
-def _get_azure_model(deployment_env_var: str):
-    """
-    Helper to initialize AzureChatOpenAI.
-    """
-    deployment_name = os.getenv(deployment_env_var)
-    api_key = os.getenv("AZURE_OPENAI_API_KEY")
-    endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-    api_version = os.getenv("AZURE_OPENAI_API_VERSION")
-
-    if not api_key or not endpoint or not deployment_name:
-        print(f"Error: Missing Azure config for {deployment_env_var}")
+def get_model_config(model_id):
+    """Load config to check for tier/provider."""
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    config_path = os.path.join(base_dir, "ai_agent/models.json")
+    
+    if not os.path.exists(config_path):
         return None
+
+    with open(config_path, "r") as f:
+        models = json.load(f)
     
-    return AzureChatOpenAI(
-        azure_deployment=deployment_name,
-        openai_api_version=api_version,
-        azure_endpoint=endpoint,
-        api_key=api_key,
-        temperature=0,
-        max_retries=2
-    )
+    for m in models:
+        if m["id"] == model_id:
+            return m
+    return None
 
-def call_gpt_3_5_turbo(prompt: str, model_id: str = "gpt-3.5-turbo") -> dict:
-    """
-    routing this to 'gpt-4.1-mini'.
-    """
-    model = _get_azure_model("AZURE_DEPLOYMENT_FAST")
-    if not model:
-        return {"response": "Config Error: Missing AZURE_DEPLOYMENT_FAST in .env"}
+def call_generic_model(prompt: str, model_id: str) -> dict:
+    config = get_model_config(model_id)
+    if not config:
+        return {"response": f"Error: Model ID {model_id} not found in config."}
+
+    provider_id = config.get("providerId")
+    tier = config.get("tier")
+    
+    llm = None
     
     try:
-        response = model.invoke(prompt)
-        return {"response": response.content}
-    except Exception as e:
-        return {"response": f"Azure Error (Fast Model): {str(e)}"}
+        # --- 1. AZURE OPENAI (Standard & Reasoning) ---
+        if provider_id in ["azure", "azureDeepSeek", "azureGrok"]:
+            
+            # Base arguments for Azure
+            azure_kwargs = {
+                "azure_deployment": model_id,
+                "openai_api_version": os.getenv("AZURE_OPENAI_API_VERSION"),
+                "azure_endpoint": os.getenv("AZURE_OPENAI_ENDPOINT"),
+                "api_key": os.getenv("AZURE_OPENAI_API_KEY"),
+            }
+            if tier != "reasoning" and "o3" not in model_id and "o1" not in model_id:
+                azure_kwargs["temperature"] = 0
+                
+            llm = AzureChatOpenAI(**azure_kwargs)
 
-def call_gpt_4(prompt: str, model_id: str = "gpt-4-turbo") -> dict:
-    """
-    ROUTING UPDATE: Maps to 'gpt-4.1' (smart model).
-    """
-    model = _get_azure_model("AZURE_DEPLOYMENT_SMART")
-    if not model:
-        return {"response": "Config Error: Missing AZURE_DEPLOYMENT_SMART in .env"}
+        # --- 2. AWS BEDROCK ---
+        elif provider_id in ["amazonClaude", "amazonMeta", "amazonMistral", "amazonNova", "amazonDeepSeek"]:
+            llm = ChatBedrock(
+                model_id=model_id,
+                region_name=os.getenv("AWS_DEFAULT_REGION", "us-east-1"),
+                provider="anthropic" if "claude" in model_id else "meta"
+            )
 
-    try:
-        response = model.invoke(prompt)
+        # --- 3. GOOGLE GEMINI ---
+        elif provider_id == "google":
+            llm = ChatGoogleGenerativeAI(
+                model=model_id,
+                google_api_key=os.getenv("GOOGLE_API_KEY"),
+                temperature=0 
+            )
+
+        # --- 4. PERPLEXITY ---
+        elif provider_id == "perplexity":
+             from langchain_openai import ChatOpenAI
+             llm = ChatOpenAI(
+                 model=model_id, 
+                 api_key=os.getenv("PERPLEXITY_API_KEY"),
+                 base_url="https://api.perplexity.ai"
+             )
+
+        else:
+            return {"response": f"Error: Provider {provider_id} not implemented."}
+        response = llm.invoke(prompt)
         return {"response": response.content}
+
     except Exception as e:
-        return {"response": f"Azure Error (Smart Model): {str(e)}"}
-def call_reasoning_model(prompt: str) -> dict:
-    """
-    'o3-mini' 
-    """
-    model = _get_azure_model("AZURE_DEPLOYMENT_REASONING")
-    if not model:
-        return {"response": "Config Error: Missing AZURE_DEPLOYMENT_REASONING"}
-        
-    try:
-        response = model.invoke(prompt)
-        return {"response": response.content}
-    except Exception as e:
-        return {"response": f"Azure Error (o3-mini): {str(e)}"}
-def call_claude(prompt: str, model_id: str = "claude-3-opus") -> dict:
-    return call_gpt_4(prompt, model_id)
+        return {"response": f"Error calling {model_id}: {str(e)}"}

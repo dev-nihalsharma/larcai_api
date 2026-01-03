@@ -1,30 +1,122 @@
 [
   {
-    "id": "gpt-3.5-turbo",
+    "id": "o3-mini",
+    "name": "ChatGPT-o3 mini",
     "provider": "OpenAI",
-    "tier": "fast",
-    "context_limit": 16000,
-    "cost": 0.5
+    "providerId": "azure",
+    "tier": "reasoning",
+    "category": "logic",
+    "cost": 4.0,
+    "enabled": true
   },
   {
-    "id": "gpt-4-turbo",
+    "id": "us.deepseek.r1-v1:0",
+    "name": "DeepSeek R1",
+    "provider": "DeepSeek",
+    "providerId": "amazonDeepSeek",
+    "tier": "reasoning",
+    "category": "logic",
+    "cost": 2.0,
+    "enabled": true
+  },
+  {
+    "id": "gpt-4.1",
+    "name": "ChatGPT 4.1",
     "provider": "OpenAI",
+    "providerId": "azure",
     "tier": "powerful",
-    "context_limit": 128000,
-    "cost": 10.0
+    "category": "general",
+    "cost": 10.0,
+    "enabled": true
   },
   {
-    "id": "claude-3-opus",
+    "id": "us.anthropic.claude-sonnet-4-20250514-v1:0",
+    "name": "Claude 4 Sonnet",
     "provider": "Anthropic",
+    "providerId": "amazonClaude",
     "tier": "powerful",
-    "context_limit": 200000,
-    "cost": 15.0
+    "category": "general",
+    "cost": 6.0,
+    "enabled": true
   },
   {
-    "id": "llama-3-8b",
-    "provider": "Meta",
+    "id": "DeepSeek-V3-0324",
+    "name": "DeepSeek V3",
+    "provider": "DeepSeek",
+    "providerId": "azureDeepSeek",
+    "tier": "powerful",
+    "category": "general",
+    "cost": 1.5,
+    "enabled": true
+  },
+  {
+    "id": "gemini-2.5-pro-preview-05-06",
+    "name": "Gemini 2.5 Pro",
+    "provider": "Google AI",
+    "providerId": "google",
+    "tier": "powerful",
+    "category": "general",
+    "cost": 5.0,
+    "enabled": true
+  },
+  {
+    "id": "us.anthropic.claude-opus-4-20250514-v1:0",
+    "name": "Claude 4 Opus",
+    "provider": "Anthropic",
+    "providerId": "amazonClaude",
+    "tier": "powerful",
+    "category": "general",
+    "cost": 15.0,
+    "enabled": true
+  },
+  {
+    "id": "gpt-4.1-mini",
+    "name": "ChatGPT 4.1 mini",
+    "provider": "OpenAI",
+    "providerId": "azure",
     "tier": "fast",
-    "context_limit": 8000,
-    "cost": 0.0
+    "category": "general",
+    "cost": 0.5,
+    "enabled": true
+  },
+  {
+    "id": "anthropic.claude-3-5-haiku-20241022-v1:0",
+    "name": "Claude 3.5 Haiku",
+    "provider": "Anthropic",
+    "providerId": "amazonClaude",
+    "tier": "fast",
+    "category": "general",
+    "cost": 0.25,
+    "enabled": true
+  },
+  {
+    "id": "gemini-2.5-flash-preview-04-17",
+    "name": "Gemini 2.5 Flash",
+    "provider": "Google AI",
+    "providerId": "google",
+    "tier": "fast",
+    "category": "general",
+    "cost": 0.1,
+    "enabled": true
+  },
+  {
+    "id": "us.meta.llama4-scout-17b-instruct-v1:0",
+    "name": "Llama 4 Scout",
+    "provider": "Meta",
+    "providerId": "amazonMeta",
+    "tier": "fast",
+    "category": "general",
+    "cost": 0.15,
+    "enabled": true
+  },
+  {
+    "id": "sonar-pro",
+    "name": "Perplexity Sonar Pro",
+    "provider": "Perplexity",
+    "providerId": "perplexity",
+    "tier": "search",
+    "category": "search",
+    "cost": 5.0,
+    "enabled": true
   }
 ]

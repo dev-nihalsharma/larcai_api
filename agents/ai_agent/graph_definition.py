@@ -3,6 +3,8 @@ from langgraph.graph import StateGraph, START, END
 import json
 import os
 import re
+import requests
+
 
 from pymongo import MongoClient
 from langgraph.checkpoint.mongodb import MongoDBSaver
@@ -10,11 +12,11 @@ from simpleeval import simple_eval
 
 from .prompts import REACT_AGENT_PROMPT
 from ..model_connectors.call_model import (
-    call_claude,
-    call_gpt_3_5_turbo,
-    call_gpt_4,
+    call_generic_model
 )
 
+
+WEATHER_API_KEY = os.getenv("WEATHER_API_KEY")
 # ============================================================
 # Model Configuration & Tooling
 # ============================================================
@@ -39,8 +41,34 @@ def execute_tool(tool_name: str, tool_input: str) -> str:
     This function represents the 'Act' capability of the agent.
     """
     if tool_name == "get_weather":
-        return f"The weather in {tool_input} is Sunny, 25°C."
+        if not WEATHER_API_KEY:
+            return "Weather service is not configured."
 
+        city = tool_input.strip()
+
+        try:
+            url = "https://api.openweathermap.org/data/2.5/weather"
+            params = {
+                "q": f"{city},US",      # 👈 critical fix
+                "appid": WEATHER_API_KEY,
+                "units": "metric",
+            }
+
+            res = requests.get(url, params=params, timeout=10)
+            res.raise_for_status()
+            data = res.json()
+
+            temp = round(data["main"]["temp"])
+            desc = data["weather"][0]["description"]
+            wind = data["wind"]["speed"]
+
+            return (
+                f"The current weather in {city} is {temp}°C, "
+                f"{desc} with light winds."
+            )
+
+        except Exception as e:
+            return "Unable to fetch current weather data."
     if tool_name == "calculator":
         try:
             return str(simple_eval(tool_input))
@@ -92,33 +120,55 @@ def setup_node(state: AgentState) -> AgentState:
     return state
 
 
+# agents/ai_agent/graph_definition.py
+
 def auto_model_selection(state: AgentState) -> AgentState:
     """
-    Select an appropriate model based on prompt complexity
-    and estimated context size.
+    Intelligent Router: Analyzes prompt complexity and maps to 
+    Category/Tier, then selects the most cost-effective model.
     """
     config = load_models_config()
     text = state["prompt"] or ""
-
-    est_tokens = len(text) / 4
-    is_complex = any(
-        k in text.lower()
-        for k in ["code", "python", "debug", "math", "analysis", "json", "function"]
-    )
-
-    if is_complex:
-        state["model"] = "gpt-4-turbo"
-        state["metadata"]["selection_reason"] = "complexity"
-    elif est_tokens > 10000:
-        state["model"] = "claude-3-opus"
-        state["metadata"]["selection_reason"] = "large_context"
+    complexity_score = len(text) / 500  
+    
+    reasoning_keywords = [
+        "analyze", "reason", "math", "code", "logic", "solve", "why", 
+        "prove", "derive", "calculation", "theorem"
+    ]
+    search_keywords = ["latest", "news", "current", "search", "find"]
+    
+    is_reasoning = any(k in text.lower() for k in reasoning_keywords)
+    is_search = any(k in text.lower() for k in search_keywords)
+    
+    target_tier = "fast" 
+    
+    if is_search:
+        target_tier = "search"
+    elif is_reasoning:
+        target_tier = "reasoning"
+    elif complexity_score > 5 or "difficult" in text:
+        target_tier = "powerful"
+    candidates = [
+        m for m in config.values() 
+        if m.get("tier") == target_tier and m.get("enabled")
+    ]
+    if not candidates and target_tier == "reasoning":
+        target_tier = "powerful"
+        candidates = [m for m in config.values() if m.get("tier") == "powerful"]
+    if not candidates:
+        target_tier = "fast"
+        candidates = [m for m in config.values() if m.get("tier") == "fast"]
+    if candidates:
+        best_model = sorted(candidates, key=lambda x: x.get("cost", 999))[0]
+        selected_id = best_model["id"]
+        reason = f"lowest_cost_{target_tier}"
     else:
-        state["model"] = "gpt-3.5-turbo"
-        state["metadata"]["selection_reason"] = "simple_query"
+        selected_id = list(config.keys())[0]
+        reason = "emergency_fallback"
 
-    if state["model"] not in config:
-        state["model"] = list(config.keys())[0]
-
+    state["model"] = selected_id
+    state["metadata"]["selection_reason"] = reason
+    
     return state
 
 
@@ -166,12 +216,7 @@ OR
 - Final Answer
 """
 
-    if model_id == "claude-3-opus":
-        result = call_claude(final_prompt, model_id)
-    elif model_id == "gpt-4-turbo":
-        result = call_gpt_4(final_prompt, model_id)
-    else:
-        result = call_gpt_3_5_turbo(final_prompt, model_id)
+    result = call_generic_model(final_prompt, model_id) 
 
     state["response"] = result["response"]
     state["scratchpad"].append(state["response"])
@@ -197,20 +242,19 @@ def act_node(state: AgentState) -> AgentState:
 
 
 def observe_node(state: AgentState) -> AgentState:
-    """
-    Execute the chosen tool and store its observation
-    in the scratchpad for the next reasoning step.
-    """
     if state.get("current_action"):
         result = execute_tool(
             state["current_action"],
             state["current_action_input"],
         )
+
+        # 🔒 Tool output is the ONLY observation
         state["scratchpad"].append(f"Observation: {result}")
     else:
         state["scratchpad"].append("Observation: No valid action detected")
 
     return state
+
 
 
 def finalize_node(state: AgentState) -> AgentState:
