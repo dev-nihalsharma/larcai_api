@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react'; // Import icons for show/hide
+import { Eye, EyeOff } from 'lucide-react';
 
 const SignUpPage = () => {
-  // 1. States for form data and visibility
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -14,20 +13,17 @@ const SignUpPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
 
-  // Handle input changes
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    setError(''); // Clear error when user types
+    setError(''); 
   };
 
-  // 2. Validation Logic
   const handleSubmit = (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match!");
       return;
     }
-    // Proceed with registration...
     console.log("Form submitted:", formData);
   };
 
@@ -66,7 +62,7 @@ const SignUpPage = () => {
             />
           </div>
 
-          {/* Password with Eye Button */}
+          {/* Password */}
           <div className="text-left">
             <label className="block text-xs font-medium text-[#9aa0a6] mb-1 ml-1">Password</label>
             <div className="relative">
@@ -88,7 +84,7 @@ const SignUpPage = () => {
             </div>
           </div>
 
-          {/* Confirm Password with Eye Button */}
+          {/* Confirm Password */}
           <div className="text-left">
             <label className="block text-xs font-medium text-[#9aa0a6] mb-1 ml-1">Confirm Password</label>
             <div className="relative">
@@ -108,11 +104,10 @@ const SignUpPage = () => {
                 {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
-            {/* Error Message */}
             {error && <p className="text-red-500 text-[11px] mt-1 ml-1 animate-pulse">{error}</p>}
           </div>
 
-          <button className="w-full mt-4 py-2.5 bg-[#8ab4f8] hover:bg-[#aecbfa] text-[#0e0e0e] font-bold rounded-lg transition-colors shadow-lg">
+          <button className="w-full mt-4 py-2.5 bg-[#8ab4f8] hover:bg-[#aecbfa] text-[#0e0e0e] font-bold rounded-lg transition-colors shadow-lg active:scale-[0.98]">
             Create account
           </button>
         </form>
