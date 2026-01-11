@@ -8,10 +8,12 @@ export function getUserFromToken() {
   try {
     const first_name = jwtDecode(token).first_name;
     const last_name = jwtDecode(token).last_name;
+    const email = jwtDecode(token).email;
 
     return {
       first_name: first_name || "User",
       last_name: last_name || "one",
+      email: email || "abc@gmail.com",
     };
   } catch {
     return null;

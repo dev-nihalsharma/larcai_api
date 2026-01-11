@@ -112,44 +112,106 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
         {/* Profile Info - Now linked to the dedicated Sign In page */}
         <div className={`mt-4 pt-4 border-t border-[#2a2a2a] mb-2 ${isCollapsed ? 'flex justify-center' : 'px-2'}`}>
           {loggedIn ? (
-            <div className="flex items-center justify-between gap-3 p-1 rounded-lg group">
-              <div className="min-w-[32px] h-8 rounded-full bg-[#c2185b] flex items-center justify-center text-[11px] font-bold text-white">
-                {user?.first_name?.[0]?.toUpperCase() || "U"}
+            <div className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-200 ${isCollapsed ? 'justify-center' : 'hover:bg-[#1a1a1a]'
+              } group`}>
+              {/* Avatar */}
+              <div className="relative flex-shrink-0">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#c2185b] to-[#e91e63] flex items-center justify-center text-xs font-semibold text-white shadow-md">
+                  {user?.first_name?.[0]?.toUpperCase() || user?.last_name?.[0]?.toUpperCase() || "U"}
+                </div>
+                <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-[#121212]"></div>
               </div>
+
+              {/* User Info & Logout */}
               {!isCollapsed && (
-                <span className="text-[13px] font-medium truncate text-[#e3e3e3]">
-                  {user?.first_name} {user?.last_name}
-                </span>
+                <>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] font-medium text-[#e3e3e3] truncate">
+                      {user?.first_name} {user?.last_name}
+                    </div>
+                    <div className="text-[11px] text-[#9aa0a6] truncate">
+                      {user?.email || 'Account'}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      logout();
+                      window.location.reload();
+                    }}
+                    className="flex-shrink-0 p-1.5 rounded-md text-[#9aa0a6] hover:text-red-400 hover:bg-[#2a2a2a] transition-all duration-200 opacity-0 group-hover:opacity-100"
+                    title="Logout"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                      />
+                    </svg>
+                  </button>
+                </>
               )}
-
-              <button
-                onClick={() => {
-                  logout();
-                  window.location.reload();
-                }}
-                className="text-[11px] text-[#9aa0a6] hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
-              >
-                Logout
-              </button>
-
             </div>
-
           ) : (
             <Link
               to="/signin"
-              className="flex items-center gap-3 p-1 rounded-lg hover:bg-[#1a1a1a]"
+              className={`flex items-center gap-3 p-2 rounded-lg transition-all duration-200 ${isCollapsed ? 'justify-center' : 'hover:bg-[#1a1a1a]'
+                } group`}
             >
-              <div className="min-w-[32px] h-8 rounded-full bg-[#c2185b] flex items-center justify-center text-[10px] font-bold text-white">
-                LARC
+              {/* Logo/Icon */}
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#c2185b] to-[#e91e63] flex items-center justify-center shadow-md">
+                <svg
+                  className="w-4 h-4 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                  />
+                </svg>
               </div>
+
+              {/* Sign In Text */}
               {!isCollapsed && (
-                <span className="text-[13px] font-medium text-[#e3e3e3]">
-                  Sign In
-                </span>
+                <div className="flex-1">
+                  <div className="text-[13px] font-medium text-[#e3e3e3] group-hover:text-white transition-colors">
+                    Sign In
+                  </div>
+                  <div className="text-[11px] text-[#9aa0a6]">
+                    Access your account
+                  </div>
+                </div>
+              )}
+
+              {/* Arrow Icon */}
+              {!isCollapsed && (
+                <svg
+                  className="w-4 h-4 text-[#9aa0a6] group-hover:text-[#e3e3e3] group-hover:translate-x-0.5 transition-all duration-200"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
               )}
             </Link>
           )}
-
         </div>
       </div>
     </aside>
