@@ -3,6 +3,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
+from larc_dev_api.views import MyTokenObtainPairView
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('account/', include('accounts.urls')),
@@ -10,7 +11,7 @@ urlpatterns = [
     path('agents/', include('agents.urls')),
     path('subscriptions/', include('subscriptions.urls')),
     path('api-keys/', include('api_keys.urls')),
-    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path("token/", MyTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     # oauth endpoint
