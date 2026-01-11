@@ -5,6 +5,8 @@ import LogsView from './components/Rightbar';
 import APIKeysView from './components/APIKeysView';
 import SignInPage from './components/SignInPage';
 import SignUpPage from './components/SignUpPage';
+import DocumentationView from './components/DocumentationView'
+import BillingView from './components/BillingView'
 function App() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   // State to manage modal visibility
@@ -34,8 +36,8 @@ function App() {
           <Route path="/feedback" element={<div className="p-10 text-gray-400">Feedback Page</div>} />
           <Route path="/billing-support" element={<div className="p-10 text-gray-400">Billing Support Page</div>} />
           
-          <Route path="/logs" element={<LogsView />} />
-          <Route path="/billing" element={<div className="p-10 text-gray-400">Billing View Coming Soon</div>} />
+          <Route path="/logs" element={<DocumentationView />} />
+          <Route path="/billing" element={<BillingView />} />
           
           <Route path="*" element={<Navigate to="/logs" />} />
         </Routes>

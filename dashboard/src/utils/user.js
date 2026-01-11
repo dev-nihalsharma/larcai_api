@@ -6,10 +6,12 @@ export function getUserFromToken() {
   if (!token) return null;
 
   try {
-    const userId = jwtDecode(token).user_id;
+    const first_name = jwtDecode(token).first_name;
+    const last_name = jwtDecode(token).last_name;
 
     return {
-      email: userId || "User",
+      first_name: first_name || "User",
+      last_name: last_name || "one",
     };
   } catch {
     return null;

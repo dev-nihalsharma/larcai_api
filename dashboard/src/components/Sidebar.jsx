@@ -89,14 +89,6 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
             <div className="absolute bottom-full left-0 mb-2 w-64 bg-[#1e1f20] border border-[#3c4043] rounded-xl shadow-2xl py-2 z-50
               opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
 
-              <button className="w-full flex items-center justify-between px-4 py-2 text-sm text-[#e3e3e3] hover:bg-[#2d2e30]">
-                <div className="flex items-center gap-3">
-                  <Palette size={18} className="text-[#9aa0a6]" /> Theme
-                </div>
-                <ChevronRight size={14} className="text-[#9aa0a6]" />
-              </button>
-
-              <div className="my-1 border-t border-[#3c4043]"></div>
 
               <Link to="/terms" className="w-full flex items-center gap-3 px-4 py-2 text-sm text-[#e3e3e3] hover:bg-[#2d2e30]">
                 <ClipboardList size={18} className="text-[#9aa0a6]" /> Terms of service
@@ -122,13 +114,14 @@ const Sidebar = ({ isCollapsed, toggleSidebar }) => {
           {loggedIn ? (
             <div className="flex items-center justify-between gap-3 p-1 rounded-lg group">
               <div className="min-w-[32px] h-8 rounded-full bg-[#c2185b] flex items-center justify-center text-[11px] font-bold text-white">
-                {user?.email?.[0]?.toUpperCase() || "U"}
+                {user?.first_name?.[0]?.toUpperCase() || "U"}
               </div>
               {!isCollapsed && (
                 <span className="text-[13px] font-medium truncate text-[#e3e3e3]">
-                  User {user?.email}
+                  {user?.first_name} {user?.last_name}
                 </span>
               )}
+
               <button
                 onClick={() => {
                   logout();
