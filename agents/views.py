@@ -24,10 +24,16 @@ class ChatBotViewSet(viewsets.ViewSet):
         # if invalid:
         #     return resp_fail("error",data={"message": "Invalid API Key"}, code=401)
         permission_classes = [IsAuthenticated]
+        auto_mode = request.query_params.get("auto","false").lower()=="true"
         client_thread_id = request.data.get("thread_id", None)
+        selected_model=request.data.get("model",None)
+        if auto_mode:
+            final_mode=None
+        else:
+            final_mode=selected_model
         data = {
             "prompt": request.data.get("prompt", ""),
-            "model": request.data.get("model", None),
+            "model": final_mode,
         }
 
         output = langgraph_pipeline(data, thread_id=client_thread_id)
