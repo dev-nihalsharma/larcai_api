@@ -180,3 +180,14 @@ SPECTACULAR_SETTINGS = {
 SIMPLE_API_KEY = {
     "FERNET_SECRET": "Kl4HaRXhwxP20AeFuVAD0d3ss6vQQ0O6zKmxHTwowYo="
 }
+
+
+CASHFREE_BASE_URL = os.getenv(
+    "CASHFREE_BASE_URL",
+    "https://sandbox.cashfree.com/pg"
+)
+
+CASHFREE_APP_ID = os.getenv("CASHFREE_APP_ID")
+CASHFREE_SECRET_KEY = os.getenv("CASHFREE_SECRET_KEY")
+CASHFREE_DEV_FORCE_PAID = False #in prod false
+CASHFREE_DEV_PAID_AMOUNT = 100.0

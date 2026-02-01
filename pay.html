@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Payment</title>
+    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+</head>
+<body>
+    <h2>Cashfree Test Payment</h2>
+    <input type="text" id="session_id" placeholder="Paste Payment Session ID here" style="width: 300px;">
+    <button onclick="doPayment()">Pay Now</button>
+
+    <script>
+        const cashfree = Cashfree({ mode: "sandbox" }); 
+        
+        function doPayment() {
+            const sessionId = document.getElementById("session_id").value;
+            if(!sessionId) return alert("Enter Session ID!");
+
+            cashfree.checkout({
+                paymentSessionId: sessionId,
+                returnUrl: "http://localhost:8000/subscriptions/success?order_id={order_id}"
+            });
+        }
+    </script>
+</body>
+</html>
