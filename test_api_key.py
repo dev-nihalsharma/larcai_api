@@ -1,6 +1,6 @@
 import requests
 
-API_KEY = "wy32PIoh.kES9udSR9lNau4mOmWUc27112D5ZiWo1"
+API_KEY = "ntCGJl0L.hlrviUuNUcfK6lZluV2g5QmcGsDJ0I2q"
 URL = "http://localhost:8000/agents/chat/?auto=false"
 
 headers = {

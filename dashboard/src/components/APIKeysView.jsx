@@ -27,6 +27,8 @@ const APIKeysView = () => {
 
   const [selectedKey, setSelectedKey] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [createdKey, setCreatedKey] = useState(null);
+
 
   // fetch keys
   useEffect(() => {
@@ -84,35 +86,37 @@ const APIKeysView = () => {
   };
 
   // create key
-  const createApiKey = async () => {
-    setCreating(true);
-    try {
-      const res = await fetch("http://127.0.0.1:8000/api-keys/api-keys/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("access")}`,
-        },
-        body: JSON.stringify({ name: keyName }),
-      });
+const createApiKey = async () => {
+  setCreating(true);
+  try {
+    const res = await fetch("http://127.0.0.1:8000/api-keys/api-keys/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("access")}`,
+      },
+      body: JSON.stringify({ name: keyName }),
+    });
 
-      const data = await res.json();
-      if (!res.ok) throw data;
+    const data = await res.json();
+    if (!res.ok) throw data;
 
-      // Show the new key in detail view
-      setSelectedKey(data);
-      setApiKeys((prev) => [data, ...prev]);
+    setCreatedKey(data.key);
+    const { key, ...safeData } = data;
+    setApiKeys((prev) => [safeData, ...prev]);
+    setSelectedKey({
+      ...safeData,
+      key: data.key, 
+    });
 
-      setShowCreate(false);
-      setKeyName("");
-    } catch (err) {
-      alert(err?.detail || "Failed to create API key");
-    } finally {
-      setCreating(false);
-    }
-  };
-
-  // copy to clipboard
+    setShowCreate(false);
+    setKeyName("");
+  } catch (err) {
+    alert(err?.detail || "Failed to create API key");
+  } finally {
+    setCreating(false);
+  }
+};
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
@@ -305,38 +309,6 @@ const APIKeysView = () => {
 
             {/* Content */}
             <div className="px-8 py-6 space-y-6">
-              {/* API Key Section */}
-              <div>
-                <label className="block text-sm font-medium text-[#9aa0a6] mb-3">
-                  API Key
-                </label>
-                <div className="flex items-center gap-3 bg-[#0e0e0e] border border-[#3c4043] rounded-lg px-4 py-3 group">
-                  <code className="flex-1 font-mono text-sm text-[#8ab4f8] break-all">
-                    {selectedKey.key || "Key not available"}
-                  </code>
-                  <button
-                    onClick={() => {
-                      if (selectedKey.key) copyToClipboard(selectedKey.key);
-                    }}
-                    className="flex items-center gap-2 px-4 py-2 bg-[#2d2e30] hover:bg-[#3c4043] rounded-lg transition-colors flex-shrink-0"
-                  >
-                    {copied ? (
-                      <>
-                        <Check size={16} className="text-green-400" />
-                        <span className="text-sm">Copied!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy size={16} />
-                        <span className="text-sm">Copy</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-                <p className="text-xs text-[#9aa0a6] mt-2">
-                  Keep your API key secure and never share it publicly.
-                </p>
-              </div>
 
               {/* Details Grid */}
               <div className="grid grid-cols-2 gap-6">
