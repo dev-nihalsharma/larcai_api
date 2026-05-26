@@ -16,8 +16,9 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-RUN pip install -r ./requirements.txt
-RUN python ./manage.py migrate
+RUN pip install --upgrade pip
+RUN pip install -r ./larcai_api/requirements.txt
+RUN python ./larcai_api/manage.py migrate
 
 # Expose port 80 (adjust as necessary)
 EXPOSE 80
