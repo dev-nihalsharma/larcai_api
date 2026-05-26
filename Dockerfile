@@ -6,7 +6,7 @@ ENV PYTHONUNBUFFERED 1
 
 WORKDIR /code
 
-COPY ./larcai_api/ /code/larcai_api/
+COPY . /code/larcai_api/
 
 RUN pip install -r ./larcai_api/requirements.txt
 RUN python ./larcai_api/manage.py migrate
