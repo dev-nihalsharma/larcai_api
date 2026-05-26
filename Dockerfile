@@ -8,8 +8,8 @@ WORKDIR /code
 
 COPY . /code/larcai_api/
 
-RUN pip install -r ./larcai_api/requirements.txt
-RUN python ./larcai_api/manage.py migrate
+RUN pip install -r ./requirements.txt
+RUN python ./manage.py migrate
 
 # Expose port 80 (adjust as necessary)
 EXPOSE 80
